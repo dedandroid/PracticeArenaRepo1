@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Billing - Invoice</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 420px; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    .row { display: flex; justify-content: space-between; margin-top: 0.75rem; font-size: 0.9rem; }
+    .row span:first-child { color: #6b7280; }
+    .notes { margin-top: 1rem; padding: 0.75rem; background: #f9fafb; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.85rem; white-space: pre-wrap; }
+    .error { color: #b91c1c; font-size: 0.9rem; }
+    a { display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    {% if invoice %}
+    <h1>Invoice #{{ invoice.id }}</h1>
+    <div class="row"><span>Description</span><span>{{ invoice.description }}</span></div>
+    <div class="row"><span>Amount due</span><span>{{ invoice.amount }}</span></div>
+    <div class="notes">{{ invoice.notes }}</div>
+    {% else %}
+    <h1>Invoice</h1>
+    <p class="error">{{ error }}</p>
+    {% endif %}
+    <a href="/logout">Log out</a>
+  </div>
+</body>
+</html>

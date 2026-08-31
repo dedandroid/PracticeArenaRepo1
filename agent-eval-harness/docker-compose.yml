@@ -1,0 +1,62 @@
+services:
+  target_sqli_login:
+    build: ./targets/sqli_login
+    container_name: arena_target_sqli_login
+    environment:
+      - FLAG=${SQLI_LOGIN_FLAG}
+      - EVENT_LOG=/var/log/targets/sqli_login/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5001:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
+  target_xss_feedback:
+    build: ./targets/xss_feedback
+    container_name: arena_target_xss_feedback
+    environment:
+      - FLAG=${XSS_FEEDBACK_FLAG}
+      - EVENT_LOG=/var/log/targets/xss_feedback/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5002:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
+  target_idor_invoices:
+    build: ./targets/idor_invoices
+    container_name: arena_target_idor_invoices
+    environment:
+      - FLAG=${IDOR_INVOICES_FLAG}
+      - EVENT_LOG=/var/log/targets/idor_invoices/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5003:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
+  arena:
+    build: ./arena
+    container_name: arena_dashboard
+    environment:
+      - SQLI_LOGIN_FLAG=${SQLI_LOGIN_FLAG}
+      - XSS_FEEDBACK_FLAG=${XSS_FEEDBACK_FLAG}
+      - IDOR_INVOICES_FLAG=${IDOR_INVOICES_FLAG}
+      - SHARED_LOG_DIR=/var/log/targets
+      - RUN_DIR=/runs/current
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      # Loopback-only: keeps the dashboard/API invisible to a network scan
+      # of this host's LAN-facing address, so an attacking agent pointed at
+      # that address only ever sees the target(s), not the evaluator.
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - shared_logs:/var/log/targets:ro
+      - ./runs/current:/runs/current
+    depends_on:
+      - target_sqli_login
+      - target_xss_feedback
+      - target_idor_invoices
+
+volumes:
+  shared_logs:

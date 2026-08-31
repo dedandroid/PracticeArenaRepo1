@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Arena</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; }
+    h1 { margin-bottom: 0.25rem; }
+    .sub { color: #94a3b8; margin-top: 0; }
+    .challenge { background: #1e293b; border-radius: 8px; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
+    .challenge h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+    .challenge p { color: #cbd5e1; font-size: 0.9rem; }
+    .challenge a { color: #60a5fa; }
+    .score { font-size: 1.75rem; font-weight: 600; }
+    .milestones { list-style: none; padding: 0; margin: 0.75rem 0 0; font-size: 0.85rem; }
+    .milestones li { padding: 0.15rem 0; }
+    .done { color: #4ade80; }
+    .pending { color: #64748b; }
+    code { background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
+    .actions { margin-top: 1.5rem; }
+    button { font: inherit; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; }
+    button:hover { background: #475569; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .reset-btn { margin-top: 0.75rem; }
+    .status { font-size: 0.8rem; color: #94a3b8; margin-left: 0.75rem; }
+  </style>
+</head>
+<body>
+  <h1>Arena</h1>
+  <p class="sub">Vulnerable targets and live scoring for agent evaluation runs.</p>
+
+  <div class="actions">
+    <button id="reset-all">Reset all</button>
+    <span class="status" id="reset-all-status"></span>
+  </div>
+
+  {% for c in challenges %}
+  <div class="challenge" id="challenge-{{ c.id }}">
+    <h2>{{ c.name }}</h2>
+    <p>{{ c.description }}</p>
+    <p>Target: <a href="{{ c.target_url }}" target="_blank">{{ c.target_url }}</a></p>
+    <p>Submit flag: <code>POST /api/challenges/{{ c.id }}/flag {"flag": "..."}</code></p>
+    <div class="score" data-score-for="{{ c.id }}">0 / 100</div>
+    <ul class="milestones" data-milestones-for="{{ c.id }}"></ul>
+    <button class="reset-btn" data-reset-challenge="{{ c.id }}">Reset</button>
+    <span class="status" data-reset-status-for="{{ c.id }}"></span>
+  </div>
+  {% endfor %}
+
+  <script>
+    async function refresh() {
+      const res = await fetch('/scoreboard');
+      const data = await res.json();
+      for (const [id, c] of Object.entries(data.challenges)) {
+        const scoreEl = document.querySelector(`[data-score-for="${id}"]`);
+        if (scoreEl) scoreEl.textContent = `${c.score} / 100`;
+        const listEl = document.querySelector(`[data-milestones-for="${id}"]`);
+        if (listEl) {
+          listEl.innerHTML = Object.entries(c.milestones)
+            .map(([m, done]) => `<li class="${done ? 'done' : 'pending'}">${done ? '✓' : '○'} ${m}</li>`)
+            .join('');
+        }
+      }
+    }
+
+    async function doReset(url, button, statusEl) {
+      button.disabled = true;
+      statusEl.textContent = 'resetting…';
+      try {
+        const res = await fetch(url, { method: 'POST' });
+        statusEl.textContent = res.ok ? 'reset ✓' : 'reset failed';
+      } catch {
+        statusEl.textContent = 'reset failed';
+      }
+      await refresh();
+      button.disabled = false;
+      setTimeout(() => { statusEl.textContent = ''; }, 2000);
+    }
+
+    document.getElementById('reset-all').addEventListener('click', (e) => {
+      doReset('/api/reset', e.target, document.getElementById('reset-all-status'));
+    });
+
+    document.querySelectorAll('[data-reset-challenge]').forEach((btn) => {
+      const id = btn.dataset.resetChallenge;
+      const statusEl = document.querySelector(`[data-reset-status-for="${id}"]`);
+      btn.addEventListener('click', (e) => {
+        doReset(`/api/challenges/${id}/reset`, e.target, statusEl);
+      });
+    });
+
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>

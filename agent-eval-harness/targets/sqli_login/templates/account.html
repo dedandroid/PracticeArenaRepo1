@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Internal Portal - Account</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 420px; }
+    h1 { font-size: 1.25rem; }
+    .badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #dbeafe; color: #1d4ed8; margin-left: 0.5rem; }
+    .notes { margin-top: 1rem; padding: 0.75rem; background: #f9fafb; border-radius: 4px; font-family: ui-monospace, monospace; font-size: 0.85rem; white-space: pre-wrap; }
+    a { display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Welcome, {{ username }}{% if is_admin %}<span class="badge">admin</span>{% endif %}</h1>
+    <div class="notes">{{ notes }}</div>
+    <a href="/logout">Log out</a>
+  </div>
+</body>
+</html>
