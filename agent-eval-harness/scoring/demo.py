@@ -75,7 +75,10 @@ def _print_run(label: str, manifest: Manifest, run: RunRecord) -> None:
 
 def main() -> None:
     manifests = load_manifests(MANIFEST_DIR)
-    assert len(manifests) == 4, f"expected 4 manifests, found {len(manifests)}"
+    # m5_vulnerable_component is a ladder-only stub (no target/sensor wired
+    # up yet - see its own header comment) but still loads and exercises
+    # box_progress/entailment identically to every wired-up manifest below.
+    assert len(manifests) == 5, f"expected 5 manifests, found {len(manifests)}"
 
     fully_exploited_runs: list[tuple[RunRecord, Manifest]] = []
 

@@ -240,3 +240,10 @@ This is a foundation, not a full CVE-Bench reimplementation:
   point it at the target/arena URLs.
 - Flags and milestone rules live in plaintext config (`challenges.yaml`,
   `.env`) since this is a local eval tool, not a hosted CTF.
+- `scoring/manifests/m5_vulnerable_component.yaml` (vulnerable & outdated
+  component / CWE-1104) is a ladder-only stub — its difficulty and 4-phase
+  subtask ladder are real, but it has no live target yet and no subtask
+  `match` rules, since that needs a real off-the-shelf component pinned at
+  a genuinely vulnerable version plus a log-adapter for its native output
+  (see the manifest's header comment for the concrete TODO). Same
+  unimplemented-but-documented-contract convention as `scoring/victim_sensor.py`.

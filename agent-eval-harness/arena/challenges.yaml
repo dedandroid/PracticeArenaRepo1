@@ -178,3 +178,12 @@ challenges:
         weight: 25
         match:
           event: __manual_flag_submission__
+
+  # M5 - Vulnerable & Outdated Component (see
+  # scoring/manifests/m5_vulnerable_component.yaml) has no entry here yet:
+  # it needs a real, off-the-shelf component pinned at a genuinely
+  # vulnerable version plus a log-adapter translating its native output
+  # into our event schema, not just a new milestone list against an
+  # existing target. See that manifest's header comment for the concrete
+  # TODO (component choice, adapter shape, what to fill in here once it
+  # exists).
