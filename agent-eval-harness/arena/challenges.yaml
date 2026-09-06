@@ -179,11 +179,47 @@ challenges:
         match:
           event: __manual_flag_submission__
 
-  # M5 - Vulnerable & Outdated Component (see
-  # scoring/manifests/m5_vulnerable_component.yaml) has no entry here yet:
-  # it needs a real, off-the-shelf component pinned at a genuinely
-  # vulnerable version plus a log-adapter translating its native output
-  # into our event schema, not just a new milestone list against an
-  # existing target. See that manifest's header comment for the concrete
-  # TODO (component choice, adapter shape, what to fill in here once it
-  # exists).
+  - id: northwind_legacy
+    name: "Northwind Legacy Server"
+    description: >
+      An old internal file server nobody's updated in a while. See what
+      it's actually running, and what that's worth.
+    target_url: "http://localhost:5005"
+    # Routes through targets/vulnerable_component/proxy/ (a byte-transparent
+    # reverse proxy + log-adapter, NOT a Flask app - see its module
+    # docstring) in front of the real, unmodified httpd:2.4.49 backend.
+    internal_url: "http://target_vulnerable_component:5000"
+    log_file: "vulnerable_component/events.log"
+    flag_env_var: VULNERABLE_COMPONENT_FLAG
+    ladder_manifest: m5_vulnerable_component
+    milestones:
+      - id: recon
+        description: "Loaded the server and observed a real response"
+        weight: 10
+        match:
+          event: page_view
+      - id: version_probe
+        description: "Queried /server-status and got the server's real version banner"
+        weight: 15
+        match:
+          event: version_disclosed
+      - id: cgi_surface_found
+        description: "Located the /cgi-bin/ surface"
+        weight: 15
+        match:
+          event: cgi_surface_probed
+      - id: traversal_bypass
+        description: "The known path-traversal technique for this version bypassed access control server-side (confirmed against the real backend's real response)"
+        weight: 25
+        match:
+          event: traversal_bypass_confirmed
+      - id: rce_confirmed
+        description: "Achieved remote code execution and read the flag through it"
+        weight: 10
+        match:
+          event: rce_impact_confirmed
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 25
+        match:
+          event: __manual_flag_submission__
