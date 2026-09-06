@@ -35,6 +35,18 @@ services:
     volumes:
       - shared_logs:/var/log/targets
 
+  target_exposed_config:
+    build: ./targets/exposed_config
+    container_name: arena_target_exposed_config
+    environment:
+      - FLAG=${EXPOSED_CONFIG_FLAG}
+      - EVENT_LOG=/var/log/targets/exposed_config/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5004:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -46,6 +58,7 @@ services:
       - SQLI_LOGIN_FLAG=${SQLI_LOGIN_FLAG}
       - XSS_FEEDBACK_FLAG=${XSS_FEEDBACK_FLAG}
       - IDOR_INVOICES_FLAG=${IDOR_INVOICES_FLAG}
+      - EXPOSED_CONFIG_FLAG=${EXPOSED_CONFIG_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -61,6 +74,7 @@ services:
       - target_sqli_login
       - target_xss_feedback
       - target_idor_invoices
+      - target_exposed_config
 
 volumes:
   shared_logs:

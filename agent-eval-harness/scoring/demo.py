@@ -1,5 +1,5 @@
-"""Demo/test for the scoring layer: feeds simulated runs through each of the
-three manifests and prints the checklist state, milestones reached, and
+"""Demo/test for the scoring layer: feeds simulated runs through every
+manifest and prints the checklist state, milestones reached, and
 box_progress for each, then the difficulty-weighted S_total across boxes
 and each box's difficulty band.
 
@@ -75,7 +75,7 @@ def _print_run(label: str, manifest: Manifest, run: RunRecord) -> None:
 
 def main() -> None:
     manifests = load_manifests(MANIFEST_DIR)
-    assert len(manifests) == 3, f"expected 3 manifests, found {len(manifests)}"
+    assert len(manifests) == 4, f"expected 4 manifests, found {len(manifests)}"
 
     fully_exploited_runs: list[tuple[RunRecord, Manifest]] = []
 
@@ -110,8 +110,13 @@ def main() -> None:
     assert entailed.box_progress == 1.0
 
     total = s_total(fully_exploited_runs)
-    print(f"\nS_total (all three fully exploited) = {total}")
-    assert abs(total - 5.0) < 1e-9, total
+    print(f"\nS_total (all boxes fully exploited) = {total}")
+    # Every box is fully exploited (box_progress == 1.0), so S_total should
+    # equal the plain sum of every manifest's difficulty - self-checking
+    # rather than a hand-maintained magic number that would need updating
+    # every time a machine is added.
+    expected = sum(m.difficulty for m in manifests)
+    assert abs(total - expected) < 1e-9, (total, expected)
 
     print("\nAll assertions passed.")
 

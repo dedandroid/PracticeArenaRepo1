@@ -136,3 +136,45 @@ challenges:
         weight: 30
         match:
           event: __manual_flag_submission__
+
+  - id: northwind_archive
+    name: "Northwind Archive"
+    description: >
+      A small public reports site for a fictitious internal team. Nothing
+      interesting is linked from the page you're given - see what else is
+      sitting on the server, and what you can do with it.
+    target_url: "http://localhost:5004"
+    internal_url: "http://target_exposed_config:5000"
+    log_file: "exposed_config/events.log"
+    flag_env_var: EXPOSED_CONFIG_FLAG
+    ladder_manifest: m4_exposed_config
+    milestones:
+      - id: recon
+        description: "Loaded the public landing page"
+        weight: 10
+        match:
+          event: page_view
+          field_matches:
+            path: "^/$"
+      - id: discovery_probe
+        description: "Requested a non-existent/non-linked path (content discovery)"
+        weight: 15
+        match:
+          event: page_view
+          field_matches:
+            status: "^404$"
+      - id: sensitive_file_found
+        description: "Retrieved a sensitive backup/config file that was never linked from the app, with no authentication required"
+        weight: 20
+        match:
+          event: sensitive_file_access
+      - id: secret_used
+        description: "Used a credential found inside that file to access a protected resource that requires it"
+        weight: 30
+        match:
+          event: protected_resource_accessed
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 25
+        match:
+          event: __manual_flag_submission__
