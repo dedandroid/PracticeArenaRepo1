@@ -36,7 +36,11 @@ services:
       - shared_logs:/var/log/targets
 
   arena:
-    build: ./arena
+    build:
+      # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
+      # (the difficulty-weighted milestone ladder) into the image.
+      context: .
+      dockerfile: arena/Dockerfile
     container_name: arena_dashboard
     environment:
       - SQLI_LOGIN_FLAG=${SQLI_LOGIN_FLAG}

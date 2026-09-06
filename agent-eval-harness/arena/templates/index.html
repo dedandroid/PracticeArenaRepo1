@@ -11,23 +11,64 @@
     .challenge h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
     .challenge p { color: #cbd5e1; font-size: 0.9rem; }
     .challenge a { color: #60a5fa; }
-    .score { font-size: 1.75rem; font-weight: 600; }
-    .milestones { list-style: none; padding: 0; margin: 0.75rem 0 0; font-size: 0.85rem; }
-    .milestones li { padding: 0.15rem 0; }
+    .score { font-size: 1.75rem; font-weight: 600; margin-top: 0.5rem; }
+    .points-gained { font-size: 0.85rem; color: #93c5fd; margin: 0.2rem 0 0; }
+    .legacy-score { color: #64748b; }
     .done { color: #4ade80; }
     .pending { color: #64748b; }
     code { background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
-    .actions { margin-top: 1.5rem; }
+    .actions { margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem; }
     button { font: inherit; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; }
     button:hover { background: #475569; }
     button:disabled { opacity: 0.5; cursor: default; }
-    .reset-btn { margin-top: 0.75rem; }
+    .reset-btn { margin-top: 0.9rem; }
     .status { font-size: 0.8rem; color: #94a3b8; margin-left: 0.75rem; }
+
+    /* Top-level S_total summary card */
+    .s-total-card {
+      background: linear-gradient(135deg, #1e293b, #172554);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 1.1rem 1.5rem;
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .s-total-label { font-size: 0.95rem; color: #cbd5e1; }
+    .s-total-sub { color: #64748b; font-size: 0.8rem; margin-left: 0.4rem; }
+    .s-total-value { font-size: 2rem; font-weight: 700; color: #93c5fd; }
+
+    /* Milestone ladder + subtask checklist */
+    .ladder-heading { display: flex; align-items: baseline; gap: 0.6rem; margin: 1rem 0 0.6rem; font-size: 0.85rem; color: #94a3b8; }
+    .band-easy { color: #4ade80; }
+    .band-medium { color: #facc15; }
+    .band-hard { color: #f87171; }
+    .progress-bar { background: #334155; border-radius: 6px; height: 8px; overflow: hidden; margin: 0.35rem 0; }
+    .progress-fill { background: #60a5fa; height: 100%; transition: width 0.3s ease; }
+    .ladder { display: flex; flex-direction: column; gap: 0.5rem; }
+    .milestone { border: 1px solid #334155; border-radius: 6px; padding: 0.5rem 0.8rem; }
+    .milestone.reached { border-color: #4ade80; background: #14251c; }
+    .milestone-title { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.85rem; }
+    .milestone-weight { color: #64748b; font-weight: 400; font-size: 0.75rem; }
+    .milestone-badge { margin-left: auto; font-size: 0.7rem; padding: 0.05rem 0.45rem; border-radius: 4px; background: #334155; color: #94a3b8; }
+    .milestone.reached .milestone-badge { background: #166534; color: #bbf7d0; }
+    .subtasks { list-style: none; margin: 0.4rem 0 0; padding: 0; font-size: 0.8rem; }
+    .subtasks li { padding: 0.1rem 0; }
+    .subtasks li.done::before { content: "✓ "; }
+    .subtasks li.pending::before { content: "○ "; }
   </style>
 </head>
 <body>
   <h1>Arena</h1>
   <p class="sub">Vulnerable targets and live scoring for agent evaluation runs.</p>
+
+  <div class="s-total-card">
+    <span class="s-total-label">S_total<span class="s-total-sub">difficulty-weighted sum of points_gained across all boxes</span></span>
+    <span class="s-total-value" id="s-total-value">0.00</span>
+  </div>
 
   <div class="actions">
     <button id="reset-all">Reset all</button>
@@ -39,27 +80,89 @@
     <h2>{{ c.name }}</h2>
     <p>{{ c.description }}</p>
     <p>Target: <a href="{{ c.target_url }}" target="_blank">{{ c.target_url }}</a></p>
-    <p>Submit flag: <code>POST /api/challenges/{{ c.id }}/flag {"flag": "..."}</code></p>
-    <div class="score" data-score-for="{{ c.id }}">0 / 100</div>
-    <ul class="milestones" data-milestones-for="{{ c.id }}"></ul>
+    <p>Submit flag: <code>POST /api/challenges/{{ c.id }}/flag {"flag": "..."}</code> &middot;
+      legacy flag score: <span class="legacy-score" data-legacy-score-for="{{ c.id }}">0 / 100</span></p>
+
+    <!-- Primary completion number for this box: driven by box_progress, so
+         it always agrees with the milestone ladder below it (the legacy
+         flag score above does NOT track this - it only moves on flag
+         submission, which is a separate, older scoring model). -->
+    <div class="score" data-score-for="{{ c.id }}">0 / 10 milestone points</div>
+    <div class="points-gained" data-points-gained-for="{{ c.id }}"></div>
+
+    <div class="ladder-heading" data-ladder-heading-for="{{ c.id }}"></div>
+    <div class="progress-bar"><div class="progress-fill" data-progress-for="{{ c.id }}" style="width:0%"></div></div>
+    <div class="ladder" data-ladder-for="{{ c.id }}"></div>
+
     <button class="reset-btn" data-reset-challenge="{{ c.id }}">Reset</button>
     <span class="status" data-reset-status-for="{{ c.id }}"></span>
   </div>
   {% endfor %}
 
   <script>
+    // Milestone-ladder rendering: each phase (weight from scoring/config.py)
+    // shown as a card with its subtask checklist. Ticks are read-only here -
+    // they reflect what the evaluator observed in the target's event log
+    // (scoring/log_sensor.py), not something you click. A milestone card
+    // turns green the instant every one of its subtasks is ticked, or the
+    // moment a later milestone fires and entails it.
+    const PHASE_LABEL = {
+      detection: 'Detection', confirmation: 'Confirmation',
+      verification: 'Verification', exploitation: 'Exploitation',
+    };
+
+    function renderLadder(id, ladder) {
+      const scoreEl = document.querySelector(`[data-score-for="${id}"]`);
+      const pointsEl = document.querySelector(`[data-points-gained-for="${id}"]`);
+      const heading = document.querySelector(`[data-ladder-heading-for="${id}"]`);
+      const bar = document.querySelector(`[data-progress-for="${id}"]`);
+      const container = document.querySelector(`[data-ladder-for="${id}"]`);
+      if (!scoreEl || !pointsEl || !heading || !bar || !container) return;
+
+      if (!ladder) {
+        scoreEl.textContent = '';
+        pointsEl.textContent = '';
+        heading.textContent = '';
+        bar.style.width = '0%';
+        container.innerHTML = '';
+        return;
+      }
+
+      // Milestone points earned (weights sum to 10 - see scoring/config.py),
+      // derived straight from box_progress so this number can never drift
+      // from the ladder rendered underneath it.
+      const earnedPoints = Math.round(ladder.box_progress * 10);
+      const pct = Math.round(ladder.box_progress * 100);
+      scoreEl.textContent = `${earnedPoints} / 10 milestone points (${pct}%)`;
+      pointsEl.textContent =
+        `points gained = box_progress × difficulty = ${ladder.box_progress.toFixed(2)} × ${ladder.difficulty.toFixed(2)} = ${ladder.points_gained.toFixed(2)} (feeds S_total)`;
+      heading.innerHTML = `difficulty ${ladder.difficulty.toFixed(2)} (<span class="band-${ladder.band}">${ladder.band}</span>)`;
+      bar.style.width = `${pct}%`;
+
+      container.innerHTML = ladder.milestones.map((ms) => `
+        <div class="milestone ${ms.reached ? 'reached' : ''}">
+          <div class="milestone-title">
+            <span>${ms.reached ? '✓' : '○'} ${PHASE_LABEL[ms.phase] || ms.phase}</span>
+            <span class="milestone-weight">(weight ${ms.weight})</span>
+            <span class="milestone-badge">${ms.reached ? 'REACHED' : 'not reached'}</span>
+          </div>
+          <ul class="subtasks">
+            ${ms.subtasks.map((s) => `<li class="${s.done ? 'done' : 'pending'}">${s.description}</li>`).join('')}
+          </ul>
+        </div>`).join('');
+    }
+
     async function refresh() {
       const res = await fetch('/scoreboard');
       const data = await res.json();
+
+      const sTotalValueEl = document.getElementById('s-total-value');
+      if (sTotalValueEl) sTotalValueEl.textContent = data.ladder_s_total.toFixed(2);
+
       for (const [id, c] of Object.entries(data.challenges)) {
-        const scoreEl = document.querySelector(`[data-score-for="${id}"]`);
-        if (scoreEl) scoreEl.textContent = `${c.score} / 100`;
-        const listEl = document.querySelector(`[data-milestones-for="${id}"]`);
-        if (listEl) {
-          listEl.innerHTML = Object.entries(c.milestones)
-            .map(([m, done]) => `<li class="${done ? 'done' : 'pending'}">${done ? '✓' : '○'} ${m}</li>`)
-            .join('');
-        }
+        const legacyEl = document.querySelector(`[data-legacy-score-for="${id}"]`);
+        if (legacyEl) legacyEl.textContent = `${c.score} / 100`;
+        renderLadder(id, c.ladder);
       }
     }
 

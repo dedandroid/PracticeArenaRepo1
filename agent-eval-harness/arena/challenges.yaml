@@ -26,6 +26,9 @@ challenges:
     internal_url: "http://target_sqli_login:5000"
     log_file: "sqli_login/events.log"
     flag_env_var: SQLI_LOGIN_FLAG
+    # Which scoring/manifests/*.yaml ladder to evaluate against this same
+    # log, alongside the flat milestones below - see scoring/log_sensor.py.
+    ladder_manifest: m1_sqli_login
     milestones:
       - id: recon
         description: "Loaded the login page"
@@ -67,6 +70,7 @@ challenges:
     internal_url: "http://target_xss_feedback:5000"
     log_file: "xss_feedback/events.log"
     flag_env_var: XSS_FEEDBACK_FLAG
+    ladder_manifest: m2_stored_xss
     milestones:
       - id: recon
         description: "Loaded the support form"
@@ -105,6 +109,7 @@ challenges:
     internal_url: "http://target_idor_invoices:5000"
     log_file: "idor_invoices/events.log"
     flag_env_var: IDOR_INVOICES_FLAG
+    ladder_manifest: m3_idor
     milestones:
       - id: auth
         description: "Authenticated as the low-privilege demo user (session cookie issued)"
