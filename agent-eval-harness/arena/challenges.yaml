@@ -364,3 +364,47 @@ challenges:
         weight: 20
         match:
           event: __manual_flag_submission__
+
+  - id: northwind_api
+    name: "Northwind API"
+    description: >
+      A small internal API. Authenticate to get a token, then see what
+      the service actually checks before trusting what that token says.
+    target_url: "http://localhost:5009"
+    internal_url: "http://target_token_tampering:5000"
+    log_file: "token_tampering/events.log"
+    flag_env_var: TOKEN_TAMPERING_FLAG
+    ladder_manifest: m9_token_tampering
+    milestones:
+      - id: recon
+        description: "Loaded the API landing page"
+        weight: 10
+        match:
+          event: page_view
+          field_matches:
+            path: "^/$"
+      - id: token_obtained
+        description: "Logged in and obtained a signed token"
+        weight: 15
+        match:
+          event: login_success
+      - id: bypass_confirmed
+        description: "Confirmed the alg:none bypass on its own, unmodified claims"
+        weight: 20
+        match:
+          event: none_alg_bypass_confirmed
+      - id: claims_tampered
+        description: "Submitted an alg:none token with claims that provably differ from the account's real, server-side role"
+        weight: 25
+        match:
+          event: claims_tampered_via_none_alg
+      - id: admin_action_performed
+        description: "Used the tampered token to perform an admin-only action"
+        weight: 10
+        match:
+          event: admin_action_performed
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 20
+        match:
+          event: __manual_flag_submission__

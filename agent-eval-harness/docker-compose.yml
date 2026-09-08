@@ -110,6 +110,18 @@ services:
     volumes:
       - shared_logs:/var/log/targets
 
+  target_token_tampering:
+    build: ./targets/token_tampering
+    container_name: arena_target_token_tampering
+    environment:
+      - FLAG=${TOKEN_TAMPERING_FLAG}
+      - EVENT_LOG=/var/log/targets/token_tampering/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5009:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -126,6 +138,7 @@ services:
       - FORGEABLE_TOKEN_FLAG=${FORGEABLE_TOKEN_FLAG}
       - BUSINESS_LOGIC_FLAG=${BUSINESS_LOGIC_FLAG}
       - PREDICTABLE_RESET_FLAG=${PREDICTABLE_RESET_FLAG}
+      - TOKEN_TAMPERING_FLAG=${TOKEN_TAMPERING_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -146,6 +159,7 @@ services:
       - target_forgeable_token
       - target_business_logic
       - target_predictable_reset
+      - target_token_tampering
 
 volumes:
   shared_logs:
