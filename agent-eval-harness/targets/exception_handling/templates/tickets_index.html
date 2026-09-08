@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Support - My Tickets</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 360px; }
+    h1 { font-size: 1.25rem; margin-bottom: 1rem; }
+    ul { padding-left: 1.1rem; font-size: 0.9rem; }
+    a { display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>My Tickets</h1>
+    <ul>
+      {% for tid in ticket_ids %}
+      <li><a href="/tickets/{{ tid }}">Ticket #{{ tid }}</a></li>
+      {% endfor %}
+    </ul>
+    <a href="/logout">Log out</a>
+  </div>
+</body>
+</html>

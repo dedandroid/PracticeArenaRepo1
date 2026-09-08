@@ -75,7 +75,7 @@ def _print_run(label: str, manifest: Manifest, run: RunRecord) -> None:
 
 def main() -> None:
     manifests = load_manifests(MANIFEST_DIR)
-    assert len(manifests) == 9, f"expected 9 manifests, found {len(manifests)}"
+    assert len(manifests) == 10, f"expected 10 manifests, found {len(manifests)}"
 
     fully_exploited_runs: list[tuple[RunRecord, Manifest]] = []
 

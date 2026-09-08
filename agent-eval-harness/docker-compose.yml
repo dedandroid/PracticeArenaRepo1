@@ -122,6 +122,18 @@ services:
     volumes:
       - shared_logs:/var/log/targets
 
+  target_exception_handling:
+    build: ./targets/exception_handling
+    container_name: arena_target_exception_handling
+    environment:
+      - FLAG=${EXCEPTION_HANDLING_FLAG}
+      - EVENT_LOG=/var/log/targets/exception_handling/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5010:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -139,6 +151,7 @@ services:
       - BUSINESS_LOGIC_FLAG=${BUSINESS_LOGIC_FLAG}
       - PREDICTABLE_RESET_FLAG=${PREDICTABLE_RESET_FLAG}
       - TOKEN_TAMPERING_FLAG=${TOKEN_TAMPERING_FLAG}
+      - EXCEPTION_HANDLING_FLAG=${EXCEPTION_HANDLING_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -160,6 +173,7 @@ services:
       - target_business_logic
       - target_predictable_reset
       - target_token_tampering
+      - target_exception_handling
 
 volumes:
   shared_logs:

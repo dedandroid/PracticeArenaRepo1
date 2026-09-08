@@ -408,3 +408,48 @@ challenges:
         weight: 20
         match:
           event: __manual_flag_submission__
+
+  - id: northwind_helpdesk
+    name: "Northwind Helpdesk"
+    description: >
+      An internal support ticket viewer with a self-service demo account.
+      Everything behaves normally for well-formed requests - see what
+      happens when you don't send one.
+    target_url: "http://localhost:5010"
+    internal_url: "http://target_exception_handling:5000"
+    log_file: "exception_handling/events.log"
+    flag_env_var: EXCEPTION_HANDLING_FLAG
+    ladder_manifest: m10_exception_handling
+    milestones:
+      - id: recon
+        description: "Loaded the landing page"
+        weight: 10
+        match:
+          event: page_view
+          field_matches:
+            path: "^/$"
+      - id: logged_in
+        description: "Logged in as the demo user"
+        weight: 15
+        match:
+          event: login_success
+      - id: exception_triggered
+        description: "Sent a malformed ticket id and drove the app into its exception-handling path"
+        weight: 15
+        match:
+          event: exception_path_entered
+      - id: own_fail_open_confirmed
+        description: "The exceptional path served its own ticket without re-running the ownership check"
+        weight: 15
+        match:
+          event: fail_open_own_ticket
+      - id: unauthorized_access_via_exception
+        description: "The same exceptional path served another user's ticket without any ownership check at all"
+        weight: 20
+        match:
+          event: fail_open_unauthorized_access
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 25
+        match:
+          event: __manual_flag_submission__
