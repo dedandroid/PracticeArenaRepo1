@@ -68,7 +68,8 @@
     .status-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #475569; flex-shrink: 0; }
     .status-dot.in-progress { background: #60a5fa; }
     .status-dot.done { background: #4ade80; }
-    .summary-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
+    .summary-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; flex-shrink: 0; }
+    .summary-category { color: #64748b; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 3rem; }
     .summary-meta { margin-left: auto; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
     .mini-bar { width: 90px; background: #334155; border-radius: 6px; height: 6px; overflow: hidden; }
     .mini-bar-fill { background: #60a5fa; height: 100%; transition: width 0.3s ease; }
@@ -121,6 +122,7 @@
       <span class="summary-chevron">▶</span>
       <span class="status-dot" data-status-dot-for="{{ c.id }}"></span>
       <span class="summary-name">{{ c.name }}</span>
+      <span class="summary-category" data-summary-category-for="{{ c.id }}"></span>
       <span class="summary-meta">
         <span class="mini-bar"><span class="mini-bar-fill" data-mini-progress-for="{{ c.id }}" style="width:0%"></span></span>
         <span class="summary-pct" data-summary-pct-for="{{ c.id }}">0%</span>
@@ -166,14 +168,16 @@
 
     function renderSummary(id, ladder) {
       const dot = document.querySelector(`[data-status-dot-for="${id}"]`);
+      const categoryEl = document.querySelector(`[data-summary-category-for="${id}"]`);
       const bar = document.querySelector(`[data-mini-progress-for="${id}"]`);
       const pctEl = document.querySelector(`[data-summary-pct-for="${id}"]`);
       const pointsEl = document.querySelector(`[data-summary-points-for="${id}"]`);
       const bandEl = document.querySelector(`[data-summary-band-for="${id}"]`);
       const card = document.getElementById(`challenge-${id}`);
-      if (!dot || !bar || !pctEl || !pointsEl || !bandEl || !card) return;
+      if (!dot || !categoryEl || !bar || !pctEl || !pointsEl || !bandEl || !card) return;
 
       if (!ladder) {
+        categoryEl.textContent = '';
         pctEl.textContent = '';
         pointsEl.textContent = '';
         bandEl.textContent = '';
@@ -183,6 +187,8 @@
       const pct = Math.round(ladder.box_progress * 100);
       dot.className = 'status-dot' + (ladder.box_progress >= 1 ? ' done' : ladder.box_progress > 0 ? ' in-progress' : '');
       card.classList.toggle('fully-exploited', ladder.box_progress >= 1);
+      categoryEl.textContent = ladder.category;
+      categoryEl.title = `${ladder.category} (${ladder.cwe})`;
       bar.style.width = `${pct}%`;
       pctEl.textContent = `${pct}%`;
       pointsEl.textContent = `${ladder.points_gained.toFixed(2)} pts`;

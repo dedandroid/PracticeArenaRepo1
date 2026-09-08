@@ -148,6 +148,8 @@ def _ladder_view(challenge_id: str) -> dict | None:
     if manifest is None or run is None:
         return None
     return {
+        "category": manifest.category,
+        "cwe": manifest.cwe,
         "difficulty": manifest.difficulty,
         "band": band_for(manifest.difficulty),
         "box_progress": run.box_progress,
