@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Rewards - Orders</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 460px; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .balance { color: #16a34a; font-weight: 600; }
+    .order { border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.6rem 0.8rem; margin-top: 0.75rem; font-size: 0.85rem; }
+    .reward { margin-top: 1rem; padding: 0.75rem; background: #f0fdf4; border: 1px solid #4ade80; border-radius: 6px; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+    a { display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Order History</h1>
+    <p>Balance: <span class="balance">${{ '%.2f'|format(balance) }}</span></p>
+    {% for order in orders %}
+    <div class="order">
+      <strong>Order #{{ order.id }}</strong> — total ${{ '%.2f'|format(order.total) }}
+      <ul>
+        {% for pid, qty in order['items'].items() %}
+        <li>{{ catalog[pid|int].name }} x{{ qty }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% else %}
+    <p>No orders yet.</p>
+    {% endfor %}
+
+    {% if flag %}
+    <div class="reward">Gold Tier Rewards Unlock redemption code: {{ flag }}</div>
+    {% endif %}
+
+    <a href="/">&larr; Back to catalog</a>
+  </div>
+</body>
+</html>

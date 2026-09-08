@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Rewards</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 420px; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 0.95rem; margin: 1.25rem 0 0.5rem; color: #374151; }
+    .balance { color: #16a34a; font-weight: 600; }
+    ul { padding-left: 1.1rem; font-size: 0.9rem; margin: 0; }
+    label { display: block; font-size: 0.85rem; margin-top: 0.6rem; }
+    input { width: 100%; padding: 0.45rem; margin-top: 0.25rem; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; background: #2563eb; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    pre { background: #f9fafb; padding: 0.6rem; border-radius: 4px; font-size: 0.8rem; overflow-x: auto; }
+    a { display: inline-block; margin-top: 1.25rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Northwind Rewards</h1>
+    <p>Balance: <span class="balance">${{ '%.2f'|format(balance) }}</span></p>
+
+    <h2>Catalog</h2>
+    <ul>
+      {% for pid, product in catalog.items() %}
+      <li>#{{ pid }} — {{ product.name }} — ${{ '%.2f'|format(product.price) }}</li>
+      {% endfor %}
+    </ul>
+
+    <h2>Add to cart</h2>
+    <form method="POST" action="/cart/add">
+      <label>Product ID<input type="number" name="product_id" value="1"></label>
+      <label>Quantity<input type="number" name="quantity" value="1"></label>
+      <button type="submit">Add to cart</button>
+    </form>
+
+    <h2>Cart</h2>
+    <pre>{{ cart if cart else "(empty)" }}</pre>
+    <form method="POST" action="/checkout">
+      <button type="submit">Checkout</button>
+    </form>
+
+    <a href="/orders">View orders</a>
+  </div>
+</body>
+</html>

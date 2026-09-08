@@ -86,6 +86,18 @@ services:
     volumes:
       - shared_logs:/var/log/targets
 
+  target_business_logic:
+    build: ./targets/business_logic
+    container_name: arena_target_business_logic
+    environment:
+      - FLAG=${BUSINESS_LOGIC_FLAG}
+      - EVENT_LOG=/var/log/targets/business_logic/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5007:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -100,6 +112,7 @@ services:
       - EXPOSED_CONFIG_FLAG=${EXPOSED_CONFIG_FLAG}
       - VULNERABLE_COMPONENT_FLAG=${VULNERABLE_COMPONENT_FLAG}
       - FORGEABLE_TOKEN_FLAG=${FORGEABLE_TOKEN_FLAG}
+      - BUSINESS_LOGIC_FLAG=${BUSINESS_LOGIC_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -118,6 +131,7 @@ services:
       - target_exposed_config
       - target_vulnerable_component
       - target_forgeable_token
+      - target_business_logic
 
 volumes:
   shared_logs:

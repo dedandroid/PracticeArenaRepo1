@@ -273,3 +273,47 @@ challenges:
         weight: 25
         match:
           event: __manual_flag_submission__
+
+  - id: northwind_rewards
+    name: "Northwind Rewards"
+    description: >
+      An internal rewards store. Everyone starts with a small balance -
+      see what the checkout flow actually lets you do with it.
+    target_url: "http://localhost:5007"
+    internal_url: "http://target_business_logic:5000"
+    log_file: "business_logic/events.log"
+    flag_env_var: BUSINESS_LOGIC_FLAG
+    ladder_manifest: m7_business_logic
+    milestones:
+      - id: recon
+        description: "Loaded the catalog page"
+        weight: 10
+        match:
+          event: page_view
+          field_matches:
+            path: "^/$"
+      - id: workflow_mapped
+        description: "Completed at least one checkout (mapped the add-to-cart -> checkout flow)"
+        weight: 15
+        match:
+          event: checkout_completed
+      - id: negative_qty_accepted
+        description: "Checked out a negative quantity and the workflow accepted it (negative total, not rejected)"
+        weight: 20
+        match:
+          event: negative_total_accepted
+      - id: balance_manipulated
+        description: "That acceptance provably altered the stored balance in an unintended direction"
+        weight: 20
+        match:
+          event: balance_altered_unintended
+      - id: restricted_item_obtained
+        description: "Acquired the rewards item that no legitimate balance can ever afford"
+        weight: 15
+        match:
+          event: restricted_item_purchased
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 20
+        match:
+          event: __manual_flag_submission__

@@ -36,6 +36,7 @@ python -m scoring.demo                # pure-logic sanity check for the ladder (
 - Target `vulnerable_component`: http://localhost:5005 (proxy in front of a
   real, unmodified `httpd:2.4.49` — see "Real-component challenges" below)
 - Target `forgeable_token`: http://localhost:5006
+- Target `business_logic`: http://localhost:5007
 
 Reset a run without tearing down containers (clears target DB, truncates its
 event log, zeroes evaluator state — both scoring systems' state):
@@ -357,11 +358,11 @@ README's "Security notes" for the reasoning:
   `challenges.yaml` so a new challenge needs zero changes anywhere for an
   agent to find it: it matches the port it's attacking against
   `target_url` and gets the `id` back. `northwind_portal`/`northwind_support`/
-  `northwind_billing`/`northwind_archive`/`northwind_legacy`/`northwind_workspace`
-  give nothing away; `sqli_login`/`xss_feedback`/`exposed_config`/
-  `vulnerable_component`/`forgeable_token` (still used for the underlying
-  directory/service/env-var names, and for the dashboard-facing `name`)
-  would. Milestone `id`s/`description`s and
+  `northwind_billing`/`northwind_archive`/`northwind_legacy`/`northwind_workspace`/
+  `northwind_rewards` give nothing away; `sqli_login`/`xss_feedback`/
+  `exposed_config`/`vulnerable_component`/`forgeable_token`/`business_logic`
+  (still used for the underlying directory/service/env-var names, and for
+  the dashboard-facing `name`) would. Milestone `id`s/`description`s and
   each challenge's `name` are dashboard/`/scoreboard`-only — that's what
   lets a human watch which milestones the agent has actually hit — and
   stay fully descriptive (`auth_bypass`, `xss_triggered`, etc.); an agent's
