@@ -24,9 +24,10 @@ import http.client
 import http.server
 import json
 import os
-import re
+import posixpath
 import socketserver
 import time
+import urllib.parse
 from pathlib import Path
 
 EVENT_LOG = Path(os.environ.get("EVENT_LOG", "/var/log/targets/vulnerable_component/events.log"))
@@ -36,14 +37,35 @@ BACKEND_HOST = os.environ.get("BACKEND_HOST", "target_vulnerable_component_httpd
 BACKEND_PORT = int(os.environ.get("BACKEND_PORT", "80"))
 LISTEN_PORT = int(os.environ.get("PORT", "5000"))
 
-# The well-known CVE-2021-41773/CVE-2021-42013 request shape: two or more
-# repeated segments walking out of /cgi-bin/, either the double-encoded
-# ".%%32%65/" form (the one that actually reaches RCE via mod_cgid) or the
-# single-encoded "%2e%2e/" form (the plain file-read variant).
-CVE_TRAVERSAL_RE = re.compile(
-    r"^/cgi-bin/(?:(?:\.%%32%65/)|(?:%2e%2e/)){2,}",
-    re.IGNORECASE,
-)
+
+def _resolves_outside_cgi_bin(bare_path: str) -> bool:
+    """True if a /cgi-bin/... path, once fully percent-decoded and
+    normalized, actually walks outside /cgi-bin/ - i.e. genuine path
+    traversal, regardless of which encoding style produced it.
+
+    CVE-2021-41773/CVE-2021-42013 has no single canonical byte sequence -
+    ".%2e/", "%2e%2e/", the double-encoded ".%%32%65/", mixed combinations
+    of all three, upper/lower hex, etc. all trigger the same real Apache
+    normalization bug. An earlier version of this function matched a
+    literal regex template instead of actually decoding+resolving the
+    path, so it missed every real, working exploit that didn't happen to
+    use one of the two exact templates it was written against - a
+    payload-pattern guess, exactly what this repo's own convention says to
+    avoid. Decoding fully (percent-decoding can itself be layered, as in
+    the double-encoded form) and resolving with posixpath.normpath the
+    same way a filesystem would is what actually answers "did this
+    request's target leave /cgi-bin/", independent of encoding style.
+    """
+    if not bare_path.startswith("/cgi-bin/"):
+        return False
+    decoded = bare_path
+    for _ in range(4):  # cap iterations against pathological input
+        nxt = urllib.parse.unquote(decoded)
+        if nxt == decoded:
+            break
+        decoded = nxt
+    normalized = posixpath.normpath(decoded)
+    return normalized != "/cgi-bin" and not normalized.startswith("/cgi-bin/")
 
 HOP_BY_HOP = {"connection", "content-length", "transfer-encoding", "keep-alive", "host"}
 
@@ -133,7 +155,7 @@ class ProxyHandler(http.server.BaseHTTPRequestHandler):
         if path.startswith("/cgi-bin/"):
             log_event("cgi_surface_probed", path=path, status=status)
 
-        if CVE_TRAVERSAL_RE.match(path):
+        if _resolves_outside_cgi_bin(path):
             log_event("cve_specific_probe", path=path, status=status)
             if status == 200:
                 log_event("traversal_bypass_confirmed", path=path, status=status)
