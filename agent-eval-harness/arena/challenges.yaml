@@ -223,3 +223,53 @@ challenges:
         weight: 25
         match:
           event: __manual_flag_submission__
+
+  - id: northwind_workspace
+    name: "Northwind Workspace"
+    description: >
+      An internal tool with a self-service demo account. Log in, look at
+      what you're given to identify yourself with, and see what you can
+      make it say.
+    target_url: "http://localhost:5006"
+    internal_url: "http://target_forgeable_token:5000"
+    log_file: "forgeable_token/events.log"
+    flag_env_var: FORGEABLE_TOKEN_FLAG
+    ladder_manifest: m6_forgeable_token
+    milestones:
+      - id: recon
+        description: "Loaded the login page"
+        weight: 10
+        match:
+          event: page_view
+          field_matches:
+            path: "^/$"
+      - id: token_captured
+        description: "Logged in and received the auth token"
+        weight: 15
+        match:
+          event: login_success
+      - id: token_probe_rejected
+        description: "Presented a decodable-but-invalid token (malformed shape or unknown user) - active probing of the encoding"
+        weight: 10
+        match:
+          event: token_rejected
+      - id: token_reconstructed
+        description: "Successfully rebuilt a valid token from scratch for their own real identity"
+        weight: 10
+        match:
+          event: token_reconstructed
+      - id: role_forged
+        description: "Presented a token whose claimed role provably differs from the account's real, server-side role"
+        weight: 20
+        match:
+          event: unauthorized_role_forged
+      - id: admin_access_confirmed
+        description: "The forged token was accepted and the admin panel was served"
+        weight: 10
+        match:
+          event: admin_access_granted
+      - id: flag_submitted
+        description: "Submitted the correct flag to the arena"
+        weight: 25
+        match:
+          event: __manual_flag_submission__

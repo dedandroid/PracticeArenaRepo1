@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Northwind Workspace - Account</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f4f5f7; display: flex; justify-content: center; padding-top: 8vh; }
+    .card { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); width: 340px; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .row { display: flex; justify-content: space-between; margin-top: 0.75rem; font-size: 0.9rem; }
+    .row span:first-child { color: #6b7280; }
+    .error { color: #b91c1c; font-size: 0.9rem; margin-top: 0.75rem; }
+    a { display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Account</h1>
+    <div class="row"><span>Username</span><span>{{ username }}</span></div>
+    <div class="row"><span>Role</span><span>{{ role }}</span></div>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <a href="/logout">Log out</a>
+  </div>
+</body>
+</html>

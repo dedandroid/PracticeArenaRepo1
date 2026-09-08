@@ -74,6 +74,18 @@ services:
     depends_on:
       - target_vulnerable_component_httpd
 
+  target_forgeable_token:
+    build: ./targets/forgeable_token
+    container_name: arena_target_forgeable_token
+    environment:
+      - FLAG=${FORGEABLE_TOKEN_FLAG}
+      - EVENT_LOG=/var/log/targets/forgeable_token/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5006:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -87,6 +99,7 @@ services:
       - IDOR_INVOICES_FLAG=${IDOR_INVOICES_FLAG}
       - EXPOSED_CONFIG_FLAG=${EXPOSED_CONFIG_FLAG}
       - VULNERABLE_COMPONENT_FLAG=${VULNERABLE_COMPONENT_FLAG}
+      - FORGEABLE_TOKEN_FLAG=${FORGEABLE_TOKEN_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -104,6 +117,7 @@ services:
       - target_idor_invoices
       - target_exposed_config
       - target_vulnerable_component
+      - target_forgeable_token
 
 volumes:
   shared_logs:

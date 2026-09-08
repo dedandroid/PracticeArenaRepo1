@@ -4,6 +4,7 @@ import re
 import sys
 import threading
 import time
+import traceback
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -204,7 +205,17 @@ def evaluator_loop() -> None:
     while True:
         with state_lock:
             for challenge in CHALLENGES:
-                evaluate_challenge(challenge)
+                # One challenge's bad config (a malformed milestone/manifest
+                # match rule, a bug in a new manifest, etc.) must never take
+                # down scoring for every other challenge - this is a daemon
+                # thread with no supervisor, so an uncaught exception here
+                # silently kills it forever, freezing the entire scoreboard
+                # with no visible error short of reading container logs.
+                try:
+                    evaluate_challenge(challenge)
+                except Exception:
+                    print(f"[evaluator] error evaluating {challenge['id']!r}:", file=sys.stderr)
+                    traceback.print_exc()
             write_scorecard()
         time.sleep(1)
 
