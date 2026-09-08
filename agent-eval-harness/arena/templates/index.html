@@ -7,8 +7,6 @@
     body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; }
     h1 { margin-bottom: 0.25rem; }
     .sub { color: #94a3b8; margin-top: 0; }
-    .challenge { background: #1e293b; border-radius: 8px; padding: 1.25rem 1.5rem; margin-top: 1.5rem; }
-    .challenge h2 { margin: 0 0 0.25rem; font-size: 1.1rem; }
     .challenge p { color: #cbd5e1; font-size: 0.9rem; }
     .challenge a { color: #60a5fa; }
     .score { font-size: 1.75rem; font-weight: 600; margin-top: 0.5rem; }
@@ -18,9 +16,11 @@
     .pending { color: #64748b; }
     code { background: #0f172a; padding: 0.1rem 0.35rem; border-radius: 3px; }
     .actions { margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem; }
-    button { font: inherit; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; }
-    button:hover { background: #475569; }
+    button, .link-btn { font: inherit; background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; }
+    button:hover, .link-btn:hover { background: #475569; }
     button:disabled { opacity: 0.5; cursor: default; }
+    .link-btn { background: none; border: none; color: #93c5fd; padding: 0.2rem 0; text-decoration: underline; font-size: 0.8rem; }
+    .link-btn:hover { background: none; color: #bfdbfe; }
     .reset-btn { margin-top: 0.9rem; }
     .status { font-size: 0.8rem; color: #94a3b8; margin-left: 0.75rem; }
 
@@ -40,6 +40,44 @@
     .s-total-label { font-size: 0.95rem; color: #cbd5e1; }
     .s-total-sub { color: #64748b; font-size: 0.8rem; margin-left: 0.4rem; }
     .s-total-value { font-size: 2rem; font-weight: 700; color: #93c5fd; }
+
+    /* Collapsible challenge card - <details>/<summary> gives free
+       keyboard-accessible expand/collapse with no toggle JS needed; the
+       live-polling refresh() below only ever updates data-attributed
+       spans inside, so a card's open/closed state survives every poll. */
+    .challenge {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+    .challenge[open] { border-color: #475569; }
+    .challenge.fully-exploited { border-color: #4ade80; }
+    .challenge summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .challenge summary::-webkit-details-marker { display: none; }
+    .summary-chevron { color: #64748b; font-size: 0.7rem; transition: transform 0.15s ease; flex-shrink: 0; }
+    .challenge[open] .summary-chevron { transform: rotate(90deg); }
+    .status-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #475569; flex-shrink: 0; }
+    .status-dot.in-progress { background: #60a5fa; }
+    .status-dot.done { background: #4ade80; }
+    .summary-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
+    .summary-meta { margin-left: auto; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
+    .mini-bar { width: 90px; background: #334155; border-radius: 6px; height: 6px; overflow: hidden; }
+    .mini-bar-fill { background: #60a5fa; height: 100%; transition: width 0.3s ease; }
+    .status-dot.done ~ .summary-meta .mini-bar-fill { background: #4ade80; }
+    .summary-pct { font-size: 0.8rem; color: #94a3b8; min-width: 2.5rem; }
+    .summary-points { font-size: 0.8rem; color: #93c5fd; min-width: 5.5rem; text-align: right; }
+    .summary-band { font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 4px; background: #0f172a; border: 1px solid #334155; }
+    .challenge-body { padding: 0 1.25rem 1.25rem; border-top: 1px solid #334155; }
+    .challenge-body > *:first-child { margin-top: 1rem; }
 
     /* Milestone ladder + subtask checklist */
     .ladder-heading { display: flex; align-items: baseline; gap: 0.6rem; margin: 1rem 0 0.6rem; font-size: 0.85rem; color: #94a3b8; }
@@ -73,30 +111,45 @@
   <div class="actions">
     <button id="reset-all">Reset all</button>
     <span class="status" id="reset-all-status"></span>
+    <button class="link-btn" id="expand-all" style="margin-left: auto;">Expand all</button>
+    <button class="link-btn" id="collapse-all">Collapse all</button>
   </div>
 
   {% for c in challenges %}
-  <div class="challenge" id="challenge-{{ c.id }}">
-    <h2>{{ c.name }}</h2>
-    <p>{{ c.description }}</p>
-    <p>Target: <a href="{{ c.target_url }}" target="_blank">{{ c.target_url }}</a></p>
-    <p>Submit flag: <code>POST /api/challenges/{{ c.id }}/flag {"flag": "..."}</code> &middot;
-      legacy flag score: <span class="legacy-score" data-legacy-score-for="{{ c.id }}">0 / 100</span></p>
+  <details class="challenge" id="challenge-{{ c.id }}">
+    <summary>
+      <span class="summary-chevron">▶</span>
+      <span class="status-dot" data-status-dot-for="{{ c.id }}"></span>
+      <span class="summary-name">{{ c.name }}</span>
+      <span class="summary-meta">
+        <span class="mini-bar"><span class="mini-bar-fill" data-mini-progress-for="{{ c.id }}" style="width:0%"></span></span>
+        <span class="summary-pct" data-summary-pct-for="{{ c.id }}">0%</span>
+        <span class="summary-points" data-summary-points-for="{{ c.id }}">0.00 pts</span>
+        <span class="summary-band" data-summary-band-for="{{ c.id }}"></span>
+      </span>
+    </summary>
 
-    <!-- Primary completion number for this box: driven by box_progress, so
-         it always agrees with the milestone ladder below it (the legacy
-         flag score above does NOT track this - it only moves on flag
-         submission, which is a separate, older scoring model). -->
-    <div class="score" data-score-for="{{ c.id }}">0 / 10 milestone points</div>
-    <div class="points-gained" data-points-gained-for="{{ c.id }}"></div>
+    <div class="challenge-body">
+      <p>{{ c.description }}</p>
+      <p>Target: <a href="{{ c.target_url }}" target="_blank">{{ c.target_url }}</a></p>
+      <p>Submit flag: <code>POST /api/challenges/{{ c.id }}/flag {"flag": "..."}</code> &middot;
+        legacy flag score: <span class="legacy-score" data-legacy-score-for="{{ c.id }}">0 / 100</span></p>
 
-    <div class="ladder-heading" data-ladder-heading-for="{{ c.id }}"></div>
-    <div class="progress-bar"><div class="progress-fill" data-progress-for="{{ c.id }}" style="width:0%"></div></div>
-    <div class="ladder" data-ladder-for="{{ c.id }}"></div>
+      <!-- Primary completion number for this box: driven by box_progress, so
+           it always agrees with the milestone ladder below it (the legacy
+           flag score above does NOT track this - it only moves on flag
+           submission, which is a separate, older scoring model). -->
+      <div class="score" data-score-for="{{ c.id }}">0 / 10 milestone points</div>
+      <div class="points-gained" data-points-gained-for="{{ c.id }}"></div>
 
-    <button class="reset-btn" data-reset-challenge="{{ c.id }}">Reset</button>
-    <span class="status" data-reset-status-for="{{ c.id }}"></span>
-  </div>
+      <div class="ladder-heading" data-ladder-heading-for="{{ c.id }}"></div>
+      <div class="progress-bar"><div class="progress-fill" data-progress-for="{{ c.id }}" style="width:0%"></div></div>
+      <div class="ladder" data-ladder-for="{{ c.id }}"></div>
+
+      <button class="reset-btn" data-reset-challenge="{{ c.id }}">Reset</button>
+      <span class="status" data-reset-status-for="{{ c.id }}"></span>
+    </div>
+  </details>
   {% endfor %}
 
   <script>
@@ -110,6 +163,31 @@
       detection: 'Detection', confirmation: 'Confirmation',
       verification: 'Verification', exploitation: 'Exploitation',
     };
+
+    function renderSummary(id, ladder) {
+      const dot = document.querySelector(`[data-status-dot-for="${id}"]`);
+      const bar = document.querySelector(`[data-mini-progress-for="${id}"]`);
+      const pctEl = document.querySelector(`[data-summary-pct-for="${id}"]`);
+      const pointsEl = document.querySelector(`[data-summary-points-for="${id}"]`);
+      const bandEl = document.querySelector(`[data-summary-band-for="${id}"]`);
+      const card = document.getElementById(`challenge-${id}`);
+      if (!dot || !bar || !pctEl || !pointsEl || !bandEl || !card) return;
+
+      if (!ladder) {
+        pctEl.textContent = '';
+        pointsEl.textContent = '';
+        bandEl.textContent = '';
+        return;
+      }
+
+      const pct = Math.round(ladder.box_progress * 100);
+      dot.className = 'status-dot' + (ladder.box_progress >= 1 ? ' done' : ladder.box_progress > 0 ? ' in-progress' : '');
+      card.classList.toggle('fully-exploited', ladder.box_progress >= 1);
+      bar.style.width = `${pct}%`;
+      pctEl.textContent = `${pct}%`;
+      pointsEl.textContent = `${ladder.points_gained.toFixed(2)} pts`;
+      bandEl.innerHTML = `<span class="band-${ladder.band}">${ladder.band}</span>`;
+    }
 
     function renderLadder(id, ladder) {
       const scoreEl = document.querySelector(`[data-score-for="${id}"]`);
@@ -162,6 +240,7 @@
       for (const [id, c] of Object.entries(data.challenges)) {
         const legacyEl = document.querySelector(`[data-legacy-score-for="${id}"]`);
         if (legacyEl) legacyEl.textContent = `${c.score} / 100`;
+        renderSummary(id, c.ladder);
         renderLadder(id, c.ladder);
       }
     }
@@ -188,8 +267,16 @@
       const id = btn.dataset.resetChallenge;
       const statusEl = document.querySelector(`[data-reset-status-for="${id}"]`);
       btn.addEventListener('click', (e) => {
+        e.preventDefault();
         doReset(`/api/challenges/${id}/reset`, e.target, statusEl);
       });
+    });
+
+    document.getElementById('expand-all').addEventListener('click', () => {
+      document.querySelectorAll('details.challenge').forEach((d) => { d.open = true; });
+    });
+    document.getElementById('collapse-all').addEventListener('click', () => {
+      document.querySelectorAll('details.challenge').forEach((d) => { d.open = false; });
     });
 
     refresh();
