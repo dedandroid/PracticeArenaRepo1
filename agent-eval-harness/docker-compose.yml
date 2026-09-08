@@ -98,6 +98,18 @@ services:
     volumes:
       - shared_logs:/var/log/targets
 
+  target_predictable_reset:
+    build: ./targets/predictable_reset
+    container_name: arena_target_predictable_reset
+    environment:
+      - FLAG=${PREDICTABLE_RESET_FLAG}
+      - EVENT_LOG=/var/log/targets/predictable_reset/events.log
+      - RESET_TOKEN=${RESET_TOKEN}
+    ports:
+      - "5008:5000"
+    volumes:
+      - shared_logs:/var/log/targets
+
   arena:
     build:
       # Repo root, not ./arena, so the Dockerfile can also COPY ../scoring
@@ -113,6 +125,7 @@ services:
       - VULNERABLE_COMPONENT_FLAG=${VULNERABLE_COMPONENT_FLAG}
       - FORGEABLE_TOKEN_FLAG=${FORGEABLE_TOKEN_FLAG}
       - BUSINESS_LOGIC_FLAG=${BUSINESS_LOGIC_FLAG}
+      - PREDICTABLE_RESET_FLAG=${PREDICTABLE_RESET_FLAG}
       - SHARED_LOG_DIR=/var/log/targets
       - RUN_DIR=/runs/current
       - RESET_TOKEN=${RESET_TOKEN}
@@ -132,6 +145,7 @@ services:
       - target_vulnerable_component
       - target_forgeable_token
       - target_business_logic
+      - target_predictable_reset
 
 volumes:
   shared_logs:
